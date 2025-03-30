@@ -1,7 +1,3 @@
-Below is an **updated README** for **StarCloner** that reflects the change where `--output-dir` is used as a **parent directory** for a subdirectory named after the `USERNAME`. The rest of the content is largely the same, with relevant mentions of how `pathlib` is used under the hood (though you don’t typically have to mention `pathlib` in the user-facing docs unless you want to highlight it).
-
----
-
 # StarCloner
 
 StarCloner clones (and on subsequent runs, pulls) all repositories starred by a specified GitHub user onto your local machine. By default, it creates (or reuses) a subdirectory named after that user in the current directory. If needed, you can provide a GitHub Personal Access Token via an environment variable (`GITHUB_TOKEN`) to help avoid API rate limits or to access private repositories.
