@@ -54,7 +54,7 @@ def parse_arguments() -> argparse.Namespace:
         "--output-dir",
         "-o",
         default=".",
-        help="Parent directory in which to create/use the USERNAME folder. "
+        help="Directory in which to clone the starred repositories. "
              "Defaults to the current working directory ('.').",
     )
     return parser.parse_args()
@@ -189,9 +189,9 @@ def process_repositories(repo_data: List[Dict[str, Any]], target_dir: Path, dry_
 def main() -> None:
     args = parse_arguments()
 
-    # Determine the final path: output_dir (parent) + username subfolder
+    # Determine the final path: directly use --output-dir
     parent_dir = Path(args.output_dir).resolve()
-    final_path = parent_dir / args.username
+    final_path = parent_dir
 
     token = os.environ.get("GITHUB_TOKEN", None)
 
