@@ -13,17 +13,23 @@ def parse_arguments() -> argparse.Namespace:
     Parse command-line arguments.
     """
     parser = argparse.ArgumentParser(
-        description="Clone all repositories starred by a specified GitHub user, with optional star-based filtering."
+        description="Clone (or pull if already exists) all repositories starred by a specified GitHub user, with optional star-based filtering."
     )
     parser.add_argument(
         "username",
-        help="The GitHub username whose starred repositories should be cloned.",
+        help="The GitHub username whose starred repositories should be cloned/pulled.",
     )
     parser.add_argument(
         "--dry-run",
         "-n",
         action="store_true",
-        help="Dry-run: display which repositories would be cloned without actually cloning.",
+        help="Dry-run: display which repositories would be processed without actually doing it.",
+    )
+    parser.add_argument(
+        "--yes",
+        "-y",
+        action="store_true",
+        help="Skip confirmation prompts and proceed automatically.",
     )
     parser.add_argument(
         "--min-stars",
@@ -117,42 +123,58 @@ def filter_repositories_by_star_count(
 def confirm_action(repo_count: int, dry_run: bool) -> bool:
     """
     Display the number of repositories to process and the current mode
-    (dry-run or actual cloning), then ask the user to confirm whether to proceed.
+    (dry-run or actual cloning/pulling), then ask the user to confirm whether to proceed.
 
     :param repo_count: Number of repositories to be processed.
     :param dry_run: Whether the operation is a dry-run or not.
     :return: True if user confirms to proceed, False otherwise.
     """
-    mode: str = "dry-run (no actual cloning)" if dry_run else "actual cloning"
+    mode: str = "dry-run (no actual changes)" if dry_run else "actual clone/pull"
     print(f"\nYou are about to process {repo_count} repository(ies) with {mode}.")
     choice: str = input("Proceed? [y/N]: ").strip().lower()
     return choice == "y"
 
 
-def clone_repositories(
+def clone_or_pull_repo(repo: Dict[str, Any], target_dir: str, dry_run: bool) -> None:
+    """
+    Clone or pull a single repository:
+      - If the directory doesn't exist, clone.
+      - If it exists, run 'git pull'.
+    """
+    clone_url = repo.get("clone_url")
+    full_name = repo.get("full_name", clone_url)  # fallback if full_name is missing
+
+    # Use the last part of the "owner/repo" name as the folder name
+    local_repo_dir_name = full_name.split("/")[-1]  # e.g., "repo"
+    local_path = os.path.join(target_dir, local_repo_dir_name)
+
+    if os.path.isdir(local_path):
+        # Already cloned; do pull
+        if dry_run:
+            print(f"Dry-run: Would pull in '{local_path}' (Repository: {full_name})")
+        else:
+            print(f"Pulling in '{local_path}' (Repository: {full_name})")
+            subprocess.run(["git", "-C", local_path, "pull"], check=False)
+    else:
+        # Need to clone
+        if dry_run:
+            print(f"Dry-run: Would clone {clone_url} into {target_dir}/ (Repository: {full_name})")
+        else:
+            print(f"Cloning: {clone_url} into {target_dir}/ (Repository: {full_name})")
+            subprocess.run(["git", "clone", clone_url], cwd=target_dir, check=False)
+
+
+def process_repositories(
     repo_data: List[Dict[str, Any]], target_dir: str, dry_run: bool
 ) -> None:
     """
-    Clone each repository in the provided repo_data list into the specified target_dir.
-    If dry_run is True, no actual cloning will occur; the script will only display what it would do.
-
-    :param repo_data: List of repository data dictionaries to clone.
-    :param target_dir: The directory path under which to clone repositories.
-    :param dry_run: Whether to actually clone or just simulate.
+    For each repository in repo_data:
+      - Check if local directory exists and decide whether to clone or pull.
     """
     os.makedirs(target_dir, exist_ok=True)
 
     for repo in repo_data:
-        clone_url = repo.get("clone_url")
-        full_name = repo.get("full_name", clone_url)  # fallback if full_name is missing
-
-        if dry_run:
-            print(
-                f"Dry-run: Would clone {clone_url} into {target_dir}/ (Repository: {full_name})"
-            )
-        else:
-            print(f"Cloning: {clone_url} into {target_dir}/ (Repository: {full_name})")
-            subprocess.run(["git", "clone", clone_url], cwd=target_dir, check=False)
+        clone_or_pull_repo(repo, target_dir, dry_run)
 
 
 def main() -> None:
@@ -188,13 +210,16 @@ def main() -> None:
         stars: int = repo.get("stargazers_count", 0)
         print(f"  {name} (Stars: {stars})")
 
-    # Prompt for confirmation
-    if not confirm_action(len(filtered), args.dry_run):
-        print("Process canceled.")
-        sys.exit(0)
+    # If not in 'yes' mode, prompt for confirmation
+    if not args.yes:
+        if not confirm_action(len(filtered), args.dry_run):
+            print("Process canceled.")
+            sys.exit(0)
+    else:
+        print("\n'--yes' specified; skipping confirmation prompt.\n")
 
-    # Clone or dry-run
-    clone_repositories(filtered, target_dir=args.username, dry_run=args.dry_run)
+    # Clone or pull
+    process_repositories(filtered, target_dir=args.username, dry_run=args.dry_run)
 
 
 if __name__ == "__main__":

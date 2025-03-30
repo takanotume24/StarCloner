@@ -1,6 +1,6 @@
 # StarCloner
 
-StarCloner clones (optionally filtered by star counts) all repositories starred by a specified GitHub user onto your local machine. If needed, you can provide a GitHub Personal Access Token via an environment variable (`GITHUB_TOKEN`) to help avoid API rate limits or access private repositories.
+StarCloner clones (and on subsequent runs, pulls) all repositories starred by a specified GitHub user onto your local machine. If needed, you can provide a GitHub Personal Access Token via an environment variable (`GITHUB_TOKEN`) to help avoid API rate limits or access private repositories.
 
 ## Features
 
@@ -8,7 +8,9 @@ StarCloner clones (optionally filtered by star counts) all repositories starred 
 - **Filter by star counts**:
   - `--min-stars`: Only include repositories with a star count greater than or equal to this value.
   - `--max-stars`: Only include repositories with a star count less than or equal to this value.
-- **Dry-run mode** (`--dry-run`): Display which repositories would be cloned without actually cloning them.
+- **Dry-run mode** (`--dry-run`): Display which repositories would be processed without actually cloning/pulling them.
+- **Skip confirmation** (`--yes`): Automatically proceed without asking for user confirmation.
+- **Auto pull if already cloned**: If a repository folder is already present locally, StarCloner will run `git pull` instead of cloning.
 - **GitHub token from an environment variable** (`GITHUB_TOKEN`) to help bypass rate limits or to access private repos (if your token has the necessary permissions).
 
 ## Requirements
@@ -60,10 +62,13 @@ After setting the variable, run StarCloner as usual.
 ### Options
 
 - `USERNAME`  
-  The GitHub username whose starred repositories you want to clone (e.g., `octocat`).
+  The GitHub username whose starred repositories you want to clone/pull (e.g., `octocat`).
 
 - `--dry-run, -n`  
-  Preview the repositories to be cloned without actually cloning them.
+  Preview the repositories to be cloned or pulled without actually doing it.
+
+- `--yes, -y`  
+  Skip the confirmation prompt and immediately proceed with the clone/pull operation.
 
 - `--min-stars MIN_STARS`  
   Only process repositories with **at least** this many stars.
@@ -73,21 +78,31 @@ After setting the variable, run StarCloner as usual.
 
 ## Examples
 
-1. Clone all repositories starred by `octocat`:
+1. **Clone all starred repos by `octocat`**:
    ```bash
    python3 starcloner.py octocat
    ```
-2. Perform a dry run for repositories starred by `octocat`, but only those with at least 50 stars:
+   - First run: Clones everything into a directory named `octocat/`, with each repo in its own subfolder.
+   - Subsequent runs: Performs `git pull` for each local repo if it already exists.
+
+2. **Perform a dry run for repositories starred by `octocat`, limited to at least 50 stars**:
    ```bash
    python3 starcloner.py octocat --min-stars 50 --dry-run
    ```
-   This will simply display the repositories without actually cloning them.
-3. Use an environment variable `GITHUB_TOKEN` to clone:
+   This will display which repositories would be cloned or pulled but will not actually clone or pull them.
+
+3. **Clone/pull with an environment variable `GITHUB_TOKEN`**:
    ```bash
    export GITHUB_TOKEN="your_token_here"
    python3 starcloner.py octocat --max-stars 1000
    ```
-   Here, only repositories with **at most** 1000 stars will be cloned.
+   Here, only repositories with **at most** 1000 stars will be cloned or pulled. If they already exist locally, StarCloner will attempt a `git pull`.
+
+4. **Skip confirmation**:
+   ```bash
+   python3 starcloner.py octocat --yes
+   ```
+   This will clone (or pull) immediately without asking to confirm.
 
 ## How It Works
 
@@ -101,10 +116,10 @@ After setting the variable, run StarCloner as usual.
 3. **Sort and display**  
    - Repositories are sorted alphabetically by their `full_name` (e.g., `owner/repo`) and displayed to the user.
 
-4. **Confirmation & cloning**  
-   - StarCloner shows the number of repositories to be processed and asks for confirmation.
-   - If confirmed, each repository is cloned into a local directory named after the GitHub username (e.g., `octocat`).  
-   - If `--dry-run` is specified, StarCloner only displays which repositories would be cloned and does not perform the actual cloning.
+4. **Confirmation & clone/pull**  
+   - StarCloner shows how many repositories match your filters.
+   - Unless the `--yes` option is used, StarCloner asks for confirmation before proceeding.
+   - For each repository, if a local directory already exists, StarCloner runs `git pull`. Otherwise, it runs `git clone`.
 
 ## Notes
 
