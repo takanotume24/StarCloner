@@ -1,23 +1,29 @@
 # StarCloner
 
-StarCloner lets you clone (and on subsequent runs, pull) GitHub repositories in two ways:
+StarCloner lets you clone (and on subsequent runs, pull) GitHub repositories in three ways:
 
 1. **Starred repositories** (`star` subcommand)  
    Clone/pull all repositories starred by a specified GitHub user.
 2. **User-owned repositories** (`repo` subcommand)  
    Clone/pull all repositories owned by a specified GitHub user.
+3. **Organization-owned repositories** (`org` subcommand)  
+   Clone/pull all repositories owned by a specified GitHub organization.
 
 By default, repositories are cloned (or pulled) into the current directory. If needed, you can provide a GitHub Personal Access Token (via `GITHUB_TOKEN`) to help avoid API rate limits or to access private repositories.
 
 ## Features
 
 - **Clone starred repositories** (`star` subcommand)  
-  - Filter by **minimum/maximum star count**.
+  - Filter by **minimum/maximum star count**.  
   - Filter by **owner** (only repos owned by a specific user).
-  
+
 - **Clone user-owned repositories** (`repo` subcommand)  
-  - (Optional) Include forked repositories (`--include-forks`).
-  - (Optional) Include archived repositories (`--include-archived`).
+  - (Optional) Include **forked** repositories (`--include-forks`).  
+  - (Optional) Include **archived** repositories (`--include-archived`).
+
+- **Clone organization-owned repositories** (`org` subcommand)  
+  - (Optional) Include **forked** repositories (`--include-forks`).  
+  - (Optional) Include **archived** repositories (`--include-archived`).
 
 - **Dry-run mode** (`--dry-run` or `-n`): Display which repositories would be processed without actually cloning/pulling them.
 
@@ -58,26 +64,39 @@ By default, repositories are cloned (or pulled) into the current directory. If n
 
 ## Usage
 
-StarCloner has two subcommands:  
+StarCloner has three subcommands:
+
 - `star` — Clone/pull repositories starred by a GitHub user  
-- `repo` — Clone/pull repositories owned by a GitHub user
+- `repo` — Clone/pull repositories owned by a GitHub user  
+- `org` — Clone/pull repositories owned by a GitHub organization  
 
 General syntax:
 
 ```bash
-./starcloner.py <subcommand> [OPTIONS] USERNAME
+./starcloner.py <subcommand> [OPTIONS] ARG
 ```
 
 or
 
 ```bash
-python3 starcloner.py <subcommand> [OPTIONS] USERNAME
+python3 starcloner.py <subcommand> [OPTIONS] ARG
 ```
 
-### Subcommand: `star`
-Clones (or pulls) repositories **starred** by a given user. Options include:
+where `<subcommand>` is one of `star`, `repo`, or `org`, and `ARG` is either the username (for `star`/`repo`) or the organization name (for `org`).
 
-- **`USERNAME`**  
+---
+
+### Subcommand: `star`
+Clones (or pulls) repositories **starred** by a given user.  
+
+**Command format**:
+```bash
+python3 starcloner.py star USERNAME [OPTIONS]
+```
+
+**Options**:
+
+- **`USERNAME`** (required)  
   The GitHub username whose starred repositories you want to clone/pull (e.g., `octocat`).
 
 - **`--min-stars MIN_STARS`**  
@@ -98,10 +117,19 @@ Clones (or pulls) repositories **starred** by a given user. Options include:
 - **`--output-dir, -o OUTPUT_DIR`**  
   The directory where repositories will be cloned. Defaults to the current directory (`"."`).
 
-### Subcommand: `repo`
-Clones (or pulls) repositories **owned** by a given user. Options include:
+---
 
-- **`USERNAME`**  
+### Subcommand: `repo`
+Clones (or pulls) repositories **owned** by a given user.  
+
+**Command format**:
+```bash
+python3 starcloner.py repo USERNAME [OPTIONS]
+```
+
+**Options**:
+
+- **`USERNAME`** (required)  
   The GitHub username whose **owned** repositories you want to clone/pull.
 
 - **`--include-forks`**  
@@ -118,6 +146,38 @@ Clones (or pulls) repositories **owned** by a given user. Options include:
 
 - **`--output-dir, -o OUTPUT_DIR`**  
   The directory where repositories will be cloned. Defaults to the current directory.
+
+---
+
+### Subcommand: `org`
+Clones (or pulls) repositories **owned** by a given organization.  
+
+**Command format**:
+```bash
+python3 starcloner.py org ORGNAME [OPTIONS]
+```
+
+**Options**:
+
+- **`ORGNAME`** (required)  
+  The GitHub organization whose repositories you want to clone/pull.
+
+- **`--include-forks`**  
+  Include forked repositories (otherwise, forks are excluded by default).
+
+- **`--include-archived`**  
+  Include archived repositories (otherwise, archived repos are excluded by default).
+
+- **`--dry-run, -n`**  
+  Preview the repositories to be cloned or pulled without actually doing it.
+
+- **`--yes, -y`**  
+  Skip the confirmation prompt and immediately proceed.
+
+- **`--output-dir, -o OUTPUT_DIR`**  
+  The directory where repositories will be cloned. Defaults to the current directory.
+
+---
 
 ### Specifying a Token via Environment Variable
 
@@ -172,7 +232,19 @@ python3 starcloner.py repo octocat
 python3 starcloner.py repo octocat --include-forks --include-archived
 ```
 
-### 7. Combine multiple filters for starred repos
+### 7. Clone all **organization-owned** repos for `github` (default excludes forks & archived)
+
+```bash
+python3 starcloner.py org github
+```
+
+### 8. Clone all organization-owned repos for `github`, **including forks** and **archived**
+
+```bash
+python3 starcloner.py org github --include-forks --include-archived
+```
+
+### 9. Combine multiple filters for starred repos
 
 For example, repos with at least 100 stars **AND** owned by `microsoft`:
 
@@ -180,19 +252,19 @@ For example, repos with at least 100 stars **AND** owned by `microsoft`:
 python3 starcloner.py star octocat --min-stars 100 --owner-filter microsoft
 ```
 
-### 8. Clone/pull starred repos with an environment variable `GITHUB_TOKEN`
+### 10. Clone/pull starred repos with an environment variable `GITHUB_TOKEN`
 
 ```bash
 export GITHUB_TOKEN="your_token_here"
 python3 starcloner.py star octocat --max-stars 1000
 ```
 
-### 9. Skip confirmation
+### 11. Skip confirmation
 
 ```bash
 python3 starcloner.py star octocat --yes
 ```
-*(Works similarly with the `repo` subcommand.)*
+*(Works similarly with the `repo` and `org` subcommands.)*
 
 ---
 
@@ -200,15 +272,17 @@ python3 starcloner.py star octocat --yes
 
 1. **Fetch repositories**  
    - For `star` subcommand, StarCloner uses the endpoint:  
-     `https://api.github.com/users/<USERNAME>/starred`
+     `https://api.github.com/users/<USERNAME>/starred`  
    - For `repo` subcommand, StarCloner uses:  
      `https://api.github.com/users/<USERNAME>/repos`  
+   - For `org` subcommand, StarCloner uses:  
+     `https://api.github.com/orgs/<ORGNAME>/repos`  
    - StarCloner handles pagination automatically (e.g., multiple pages of results).  
    - If `GITHUB_TOKEN` is set, StarCloner uses it in the `Authorization` header to help reduce the chance of hitting rate limits and to allow private repo access (if your token has the proper scopes).
 
 2. **Filter & sort**  
    - For `star`, you can filter by `--min-stars`, `--max-stars`, and `--owner-filter`.  
-   - For `repo`, you can exclude forks/archived repos by default, or include them via `--include-forks` / `--include-archived`.  
+   - For `repo` and `org`, you can exclude forks/archived repos by default, or include them via `--include-forks` / `--include-archived`.  
    - The final list is sorted alphabetically (`owner/repo`) and displayed to the user.
 
 3. **Confirmation & clone/pull**  
