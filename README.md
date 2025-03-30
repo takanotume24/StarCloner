@@ -1,19 +1,32 @@
 # StarCloner
 
-StarCloner clones (and on subsequent runs, pulls) all repositories starred by a specified GitHub user onto your local machine. By default, it clones (or pulls) into the current directory. If needed, you can provide a GitHub Personal Access Token via an environment variable (`GITHUB_TOKEN`) to help avoid API rate limits or to access private repositories.
+StarCloner lets you clone (and on subsequent runs, pull) GitHub repositories in two ways:
+
+1. **Starred repositories** (`star` subcommand)  
+   Clone/pull all repositories starred by a specified GitHub user.
+2. **User-owned repositories** (`repo` subcommand)  
+   Clone/pull all repositories owned by a specified GitHub user.
+
+By default, repositories are cloned (or pulled) into the current directory. If needed, you can provide a GitHub Personal Access Token (via `GITHUB_TOKEN`) to help avoid API rate limits or to access private repositories.
 
 ## Features
 
-- **Fetch all repositories** starred by a given user.
-- **Filter by star counts**:
-  - `--min-stars`: Only include repositories with a star count greater than or equal to this value.
-  - `--max-stars`: Only include repositories with a star count less than or equal to this value.
-- **Filter by repository owner**:
-  - `--owner-filter`: Only include repositories whose owner name matches this string (case-insensitive).
-- **Dry-run mode** (`--dry-run`): Display which repositories would be processed without actually cloning/pulling them.
-- **Skip confirmation** (`--yes`): Automatically proceed without asking for user confirmation.
-- **Specify a directory** (`--output-dir` or `-o`): By default, StarCloner clones/pulls directly into your current working directory. Use `--output-dir` to specify a **different directory** in which to clone/pull the repos.
-- **Auto pull if already cloned**: If a repository folder is already present locally, StarCloner will run `git pull` instead of cloning.
+- **Clone starred repositories** (`star` subcommand)  
+  - Filter by **minimum/maximum star count**.
+  - Filter by **owner** (only repos owned by a specific user).
+  
+- **Clone user-owned repositories** (`repo` subcommand)  
+  - (Optional) Include forked repositories (`--include-forks`).
+  - (Optional) Include archived repositories (`--include-archived`).
+
+- **Dry-run mode** (`--dry-run` or `-n`): Display which repositories would be processed without actually cloning/pulling them.
+
+- **Skip confirmation** (`--yes` or `-y`): Automatically proceed without asking for user confirmation.
+
+- **Specify a target directory** (`--output-dir` or `-o`): By default, StarCloner clones/pulls into the current directory.
+
+- **Auto-pull if already cloned**: If a repository folder is already present locally, StarCloner will run `git pull` instead of cloning.
+
 - **GitHub token from an environment variable** (`GITHUB_TOKEN`) to help bypass rate limits or to access private repos (if your token has the necessary permissions).
 
 ## Requirements
@@ -23,21 +36,21 @@ StarCloner clones (and on subsequent runs, pulls) all repositories starred by a 
 
 ## Installation / Setup
 
-1. Download or copy the `starcloner.py` script to any directory on your machine.
-2. (Optional) Create and activate a Python virtual environment:
+1. **Download or copy** the `starcloner.py` script to any directory on your machine.
+2. (Optional) **Create and activate** a Python virtual environment:
 
    ```bash
    python3 -m venv venv
    source venv/bin/activate
    ```
 
-3. Install required libraries:
+3. **Install required libraries**:
 
    ```bash
    pip install requests
    ```
 
-4. (Optional) Grant execution permission to the script (on Unix-like systems):
+4. (Optional) **Grant execution permission** to the script (on Unix-like systems):
 
    ```bash
    chmod +x starcloner.py
@@ -45,39 +58,27 @@ StarCloner clones (and on subsequent runs, pulls) all repositories starred by a 
 
 ## Usage
 
-```bash
-./starcloner.py [OPTIONS] USERNAME
-```
+StarCloner has two subcommands:  
+- `star` — Clone/pull repositories starred by a GitHub user  
+- `repo` — Clone/pull repositories owned by a GitHub user
 
-or, if you did not grant execution permission:
-
-```bash
-python3 starcloner.py [OPTIONS] USERNAME
-```
-
-### Specifying a Token via Environment Variable
-
-To avoid GitHub API rate limits or to allow access to private repositories,  
-you can set the `GITHUB_TOKEN` environment variable to a personal access token.
-
-For example, on Unix-like shells:
+General syntax:
 
 ```bash
-export GITHUB_TOKEN="your_token_here"
+./starcloner.py <subcommand> [OPTIONS] USERNAME
 ```
 
-After setting the variable, run StarCloner as usual.
+or
 
-### Options
+```bash
+python3 starcloner.py <subcommand> [OPTIONS] USERNAME
+```
+
+### Subcommand: `star`
+Clones (or pulls) repositories **starred** by a given user. Options include:
 
 - **`USERNAME`**  
   The GitHub username whose starred repositories you want to clone/pull (e.g., `octocat`).
-
-- **`--dry-run, -n`**  
-  Preview the repositories to be cloned or pulled without actually doing it.
-
-- **`--yes, -y`**  
-  Skip the confirmation prompt and immediately proceed with the clone/pull operation.
 
 - **`--min-stars MIN_STARS`**  
   Only process repositories with **at least** this many stars.
@@ -88,76 +89,132 @@ After setting the variable, run StarCloner as usual.
 - **`--owner-filter OWNER_FILTER`**  
   Only include repositories whose **owner name** matches this string (case-insensitive).
 
+- **`--dry-run, -n`**  
+  Preview the repositories to be cloned or pulled without actually doing it.
+
+- **`--yes, -y`**  
+  Skip the confirmation prompt and immediately proceed.
+
 - **`--output-dir, -o OUTPUT_DIR`**  
-  The **directory** in which to clone or pull the starred repositories.  
-  Defaults to `"."` (the current directory).
+  The directory where repositories will be cloned. Defaults to the current directory (`"."`).
+
+### Subcommand: `repo`
+Clones (or pulls) repositories **owned** by a given user. Options include:
+
+- **`USERNAME`**  
+  The GitHub username whose **owned** repositories you want to clone/pull.
+
+- **`--include-forks`**  
+  Include forked repositories (otherwise, forks are excluded by default).
+
+- **`--include-archived`**  
+  Include archived repositories (otherwise, archived repos are excluded by default).
+
+- **`--dry-run, -n`**  
+  Preview the repositories to be cloned or pulled without actually doing it.
+
+- **`--yes, -y`**  
+  Skip the confirmation prompt and immediately proceed.
+
+- **`--output-dir, -o OUTPUT_DIR`**  
+  The directory where repositories will be cloned. Defaults to the current directory.
+
+### Specifying a Token via Environment Variable
+
+To avoid GitHub API rate limits or to allow access to private repositories,  
+you can set the `GITHUB_TOKEN` environment variable to a personal access token (PAT).
+
+For example, on Unix-like shells:
+
+```bash
+export GITHUB_TOKEN="your_token_here"
+```
+
+After setting the variable, run StarCloner as usual. Make sure your token has the necessary scopes/permissions for private repositories if you intend to clone/pull them.
+
+---
 
 ## Examples
 
-1. **Clone all starred repos by `octocat`**:
+### 1. Clone all repositories starred by `octocat`
 
-   ```bash
-   python3 starcloner.py octocat
-   ```
+```bash
+python3 starcloner.py star octocat
+```
 
-2. **Clone all starred repos by `octocat` into a custom directory**:
+### 2. Clone all repositories starred by `octocat` into a custom directory
 
-   ```bash
-   python3 starcloner.py octocat --output-dir /path/to/dir
-   ```
+```bash
+python3 starcloner.py star octocat --output-dir /path/to/dir
+```
 
-3. **Perform a dry run for repositories starred by `octocat`, limited to at least 50 stars**:
+### 3. Perform a dry run for repositories starred by `octocat`, limited to at least 50 stars
 
-   ```bash
-   python3 starcloner.py octocat --min-stars 50 --dry-run
-   ```
+```bash
+python3 starcloner.py star octocat --min-stars 50 --dry-run
+```
 
-4. **Filter only repos owned by `torvalds` that `octocat` has starred**:
+### 4. Filter only repos owned by `torvalds` that `octocat` has starred
 
-   ```bash
-   python3 starcloner.py octocat --owner-filter torvalds
-   ```
+```bash
+python3 starcloner.py star octocat --owner-filter torvalds
+```
 
-5. **Combine multiple filters** (e.g., only repos with at least 100 stars AND owned by `microsoft`):
+### 5. Clone all **user-owned** repos (default excludes forks & archived) by `octocat`
 
-   ```bash
-   python3 starcloner.py octocat --min-stars 100 --owner-filter microsoft
-   ```
+```bash
+python3 starcloner.py repo octocat
+```
 
-6. **Clone/pull with an environment variable `GITHUB_TOKEN`**:
+### 6. Clone all user-owned repos by `octocat`, **including forks** and **archived** repos
 
-   ```bash
-   export GITHUB_TOKEN="your_token_here"
-   python3 starcloner.py octocat --max-stars 1000
-   ```
+```bash
+python3 starcloner.py repo octocat --include-forks --include-archived
+```
 
-7. **Skip confirmation**:
+### 7. Combine multiple filters for starred repos
 
-   ```bash
-   python3 starcloner.py octocat --yes
-   ```
+For example, repos with at least 100 stars **AND** owned by `microsoft`:
+
+```bash
+python3 starcloner.py star octocat --min-stars 100 --owner-filter microsoft
+```
+
+### 8. Clone/pull starred repos with an environment variable `GITHUB_TOKEN`
+
+```bash
+export GITHUB_TOKEN="your_token_here"
+python3 starcloner.py star octocat --max-stars 1000
+```
+
+### 9. Skip confirmation
+
+```bash
+python3 starcloner.py star octocat --yes
+```
+*(Works similarly with the `repo` subcommand.)*
+
+---
 
 ## How It Works
 
-1. **Fetch starred repositories**  
-   - StarCloner accesses the GitHub API endpoint `https://api.github.com/users/<USERNAME>/starred`, retrieving all starred repositories (handling pagination as needed).
-   - If the `GITHUB_TOKEN` environment variable is set, StarCloner uses that token in the Authorization header, which can help reduce the chances of hitting API rate limits and can allow access to private repositories if the token has the proper scope/permissions.
+1. **Fetch repositories**  
+   - For `star` subcommand, StarCloner uses the endpoint:  
+     `https://api.github.com/users/<USERNAME>/starred`
+   - For `repo` subcommand, StarCloner uses:  
+     `https://api.github.com/users/<USERNAME>/repos`  
+   - StarCloner handles pagination automatically (e.g., multiple pages of results).  
+   - If `GITHUB_TOKEN` is set, StarCloner uses it in the `Authorization` header to help reduce the chance of hitting rate limits and to allow private repo access (if your token has the proper scopes).
 
-2. **Filter by star count** (and optionally by owner)  
-   - Any repository that does not meet the criteria set by `--min-stars`/`--max-stars` or does not match `--owner-filter` is excluded.
+2. **Filter & sort**  
+   - For `star`, you can filter by `--min-stars`, `--max-stars`, and `--owner-filter`.  
+   - For `repo`, you can exclude forks/archived repos by default, or include them via `--include-forks` / `--include-archived`.  
+   - The final list is sorted alphabetically (`owner/repo`) and displayed to the user.
 
-3. **Sort and display**  
-   - Repositories are sorted alphabetically by their `full_name` (e.g., `owner/repo`) and displayed to the user.
+3. **Confirmation & clone/pull**  
+   - StarCloner prints how many repositories will be processed and asks for confirmation unless you specify `--yes`.  
+   - If a local directory already exists, StarCloner runs `git pull`; otherwise, it runs `git clone`.
 
-4. **Confirmation & clone/pull**  
-   - StarCloner shows how many repositories match your filters.
-   - Unless the `--yes` option is used, StarCloner asks for confirmation before proceeding.
-   - For each repository, if a local directory already exists, StarCloner runs `git pull`. Otherwise, it runs `git clone`.
-
-5. **Directory structure**  
-   - By default, StarCloner clones/pulls into the **current directory**.  
-   - If you specify `--output-dir /path/to/dir`, the repositories are cloned or pulled directly into `/path/to/dir`.
-
-## Notes
-
-- StarCloner is released under the MIT License. You are free to modify and reuse it for your needs.
+4. **Directory structure**  
+   - By default, repositories are cloned/pulled into the **current** directory.  
+   - If `--output-dir /path/to/dir` is specified, they are cloned/pulled into that directory.
