@@ -5,8 +5,21 @@ import os
 import sys
 import requests
 import subprocess
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
+
+
+@dataclass
+class RepoInfo:
+    """
+    Holds information about a GitHub repository starred by a user.
+    """
+
+    full_name: str
+    clone_url: str
+    stargazers_count: int
+    owner_name: str
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -15,7 +28,7 @@ def parse_arguments() -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser(
         description="Clone (or pull if already exists) all repositories starred by a specified GitHub user, "
-                    "optionally filtered by star counts and owner name."
+        "optionally filtered by star counts and owner name."
     )
     parser.add_argument(
         "username",
@@ -59,28 +72,20 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def fetch_starred_repositories(username: str, token: Optional[str]) -> List[Dict[str, Any]]:
+def fetch_starred_repositories(username: str, token: Optional[str]) -> List[RepoInfo]:
     """
     Fetch all repositories starred by the given user.
     Handles pagination as needed.
-    
-    Each repository is a dict containing keys like:
-      {
-         "full_name": "owner/repo",
-         "clone_url": "https://github.com/owner/repo.git",
-         "stargazers_count": 123,
-         ...
-      }
+
+    Returns:
+        List[RepoInfo] objects containing information about starred repos.
     """
-    all_repos: List[Dict[str, Any]] = []
+    all_repos: List[RepoInfo] = []
     page: int = 1
-    headers: Dict[str, str] = {
-        "Accept": "application/vnd.github.v3+json"
-    }
+    headers: Dict[str, str] = {"Accept": "application/vnd.github.v3+json"}
 
     if token:
-        # Use Bearer token for authentication (latest recommended method)
-        headers["Authorization"] = f"Bearer {token}"
+        headers["Authorization"] = f"Bearer {token}"  # Recommended GitHub Auth approach
 
     while True:
         url = f"https://api.github.com/users/{username}/starred"
@@ -100,30 +105,41 @@ def fetch_starred_repositories(username: str, token: Optional[str]) -> List[Dict
             # No more data; reached the end of pages.
             break
 
-        all_repos.extend(data)
+        # Convert each repository dict from the API into a RepoInfo dataclass instance
+        for item in data:
+            repo_info = RepoInfo(
+                full_name=item["full_name"],
+                clone_url=item["clone_url"],
+                stargazers_count=item["stargazers_count"],
+                owner_name=item["owner"]["login"],
+            )
+            all_repos.append(repo_info)
+
         page += 1
 
     return all_repos
 
 
-def filter_repositories(repos: List[Dict[str, Any]], min_stars: Optional[int], max_stars: Optional[int],
-                        owner_filter: Optional[str]) -> List[Dict[str, Any]]:
+def filter_repositories(
+    repos: List[RepoInfo],
+    min_stars: Optional[int],
+    max_stars: Optional[int],
+    owner_filter: Optional[str],
+) -> List[RepoInfo]:
     """
     Filter the list of repositories based on stargazer count and owner's name.
     """
     filtered = []
     for repo in repos:
-        count = repo.get("stargazers_count", 0)
         # Filter by star count
-        if min_stars is not None and count < min_stars:
+        if min_stars is not None and repo.stargazers_count < min_stars:
             continue
-        if max_stars is not None and count > max_stars:
+        if max_stars is not None and repo.stargazers_count > max_stars:
             continue
 
         # Filter by owner's name
         if owner_filter is not None:
-            owner_name = repo.get("owner", {}).get("login", "")
-            if owner_name.lower() != owner_filter.lower():
+            if repo.owner_name.lower() != owner_filter.lower():
                 continue
 
         filtered.append(repo)
@@ -141,14 +157,14 @@ def confirm_action(repo_count: int, dry_run: bool) -> bool:
     return choice == "y"
 
 
-def clone_or_pull_repo(repo: Dict[str, Any], target_dir: Path, dry_run: bool) -> None:
+def clone_or_pull_repo(repo: RepoInfo, target_dir: Path, dry_run: bool) -> None:
     """
     Clone or pull a repository into target_dir:
       - If the directory doesn't exist, perform clone.
       - If it exists, run 'git pull'.
     """
-    clone_url = repo.get("clone_url")
-    full_name = repo.get("full_name", clone_url)  # fallback if full_name is missing
+    clone_url = repo.clone_url
+    full_name = repo.full_name
 
     # Use the last part of "owner/repo" as the local folder name (e.g., "repo").
     local_repo_dir_name = full_name.split("/")[-1]
@@ -157,20 +173,26 @@ def clone_or_pull_repo(repo: Dict[str, Any], target_dir: Path, dry_run: bool) ->
     if local_path.is_dir():
         # Repository already cloned; perform pull
         if dry_run:
-            print(f"Dry-run: Would perform pull in '{local_path}' (Repository: {full_name})")
+            print(f"Dry-run: Would pull in '{local_path}' (Repository: {full_name})")
         else:
             print(f"Pulling in '{local_path}' (Repository: {full_name})")
             subprocess.run(["git", "-C", str(local_path), "pull"], check=False)
     else:
         # Repository not cloned; perform clone
         if dry_run:
-            print(f"Dry-run: Would clone {clone_url} into '{target_dir}' (Repository: {full_name})")
+            print(
+                f"Dry-run: Would clone {clone_url} into '{target_dir}' (Repository: {full_name})"
+            )
         else:
             print(f"Cloning: {clone_url} into '{target_dir}' (Repository: {full_name})")
-            subprocess.run(["git", "clone", clone_url], cwd=str(target_dir), check=False)
+            subprocess.run(
+                ["git", "clone", clone_url], cwd=str(target_dir), check=False
+            )
 
 
-def process_repositories(repo_data: List[Dict[str, Any]], target_dir: Path, dry_run: bool) -> None:
+def process_repositories(
+    repo_data: List[RepoInfo], target_dir: Path, dry_run: bool
+) -> None:
     """
     Process each repository: if the local directory exists, pull updates; otherwise, clone it.
     """
@@ -198,7 +220,9 @@ def main() -> None:
     # Fetch all repositories starred by the specified user
     starred_repos = fetch_starred_repositories(args.username, token)
     if not starred_repos:
-        print(f"No starred repositories found for user '{args.username}' or an error occurred.")
+        print(
+            f"No starred repositories found for user '{args.username}' or an error occurred."
+        )
         sys.exit(0)
 
     # Filter repositories by stargazer count and owner's name (if specified)
@@ -206,7 +230,7 @@ def main() -> None:
         starred_repos,
         min_stars=args.min_stars,
         max_stars=args.max_stars,
-        owner_filter=args.owner_filter
+        owner_filter=args.owner_filter,
     )
 
     if not filtered_repos:
@@ -214,15 +238,16 @@ def main() -> None:
         sys.exit(0)
 
     # Sort repositories alphabetically by full_name
-    filtered_repos.sort(key=lambda r: r.get("full_name", "").lower())
+    filtered_repos.sort(key=lambda r: r.full_name.lower())
 
     # Display the filtered repositories
-    print(f"Repositories to process (total {len(filtered_repos)}), sorted alphabetically:")
+    print(
+        f"Repositories to process (total {len(filtered_repos)}), sorted alphabetically:"
+    )
     for repo in filtered_repos:
-        name = repo.get("full_name", "unknown/unknown")
-        stars = repo.get("stargazers_count", 0)
-        owner_name = repo.get("owner", {}).get("login", "")
-        print(f"  {name} (Stars: {stars}, Owner: {owner_name})")
+        print(
+            f"  {repo.full_name} (Stars: {repo.stargazers_count}, Owner: {repo.owner_name})"
+        )
 
     # If '--yes' is not specified, prompt for confirmation
     if not args.yes:
