@@ -1,7 +1,7 @@
 import unittest
 from argparse import Namespace
 from functions.filter_repositories import filter_repositories
-from types.repo_info import RepoInfo
+from pytypes.repo_info import RepoInfo
 
 
 class TestFilterRepositories(unittest.TestCase):

@@ -1,6 +1,6 @@
 import argparse
 from typing import List
-from types.repo_info import RepoInfo
+from pytypes.repo_info import RepoInfo
 from functions.filter_star_repositories import filter_star_repositories
 
 

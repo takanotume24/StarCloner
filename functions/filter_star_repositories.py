@@ -1,5 +1,5 @@
 from typing import List, Optional
-from types.repo_info import RepoInfo
+from pytypes.repo_info import RepoInfo
 
 
 def filter_star_repositories(

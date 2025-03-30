@@ -1,5 +1,5 @@
 from typing import List
-from types.repo_info import RepoInfo
+from pytypes.repo_info import RepoInfo
 
 
 def print_repositories(repos: List[RepoInfo]) -> None:

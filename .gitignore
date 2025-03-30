@@ -1,2 +1,6 @@
 diff.txt
 .env
+.venv/
+*.egg-info/
+build/
+__pycache__

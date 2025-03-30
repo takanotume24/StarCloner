@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import List
-from types.repo_info import RepoInfo
+from pytypes.repo_info import RepoInfo
 from functions.clone_or_pull_repo import clone_or_pull_repo
 
 

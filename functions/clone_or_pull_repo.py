@@ -1,6 +1,6 @@
 import subprocess
 from pathlib import Path
-from types.repo_info import RepoInfo
+from pytypes.repo_info import RepoInfo
 
 
 def clone_or_pull_repo(repo: RepoInfo, target_dir: Path, dry_run: bool) -> None:

@@ -1,6 +1,6 @@
 import argparse
 from typing import List, Optional
-from types.repo_info import RepoInfo
+from pytypes.repo_info import RepoInfo
 from functions.fetch_starred_repositories import fetch_starred_repositories
 from functions.fetch_user_repositories import fetch_user_repositories
 from functions.fetch_org_repositories import fetch_org_repositories

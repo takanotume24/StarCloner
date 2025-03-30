@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="github-star-clone-tool",
+    name="starcloner",
     version="1.0.0",
     packages=find_packages(),
     entry_points={
@@ -11,6 +11,7 @@ setup(
     },
     install_requires=[
         "requests",
+        "pytest",
     ],
     python_requires=">=3.10",
 )

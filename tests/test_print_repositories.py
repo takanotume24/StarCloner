@@ -2,7 +2,7 @@ import unittest
 from io import StringIO
 from unittest.mock import patch
 from functions.print_repositories import print_repositories
-from types.repo_info import RepoInfo
+from pytypes.repo_info import RepoInfo
 
 
 class TestPrintRepositories(unittest.TestCase):

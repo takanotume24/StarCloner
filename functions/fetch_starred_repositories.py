@@ -1,7 +1,7 @@
 import requests
 import sys
 from typing import Dict, List, Optional
-from types.repo_info import RepoInfo
+from pytypes.repo_info import RepoInfo
 
 
 def fetch_starred_repositories(username: str, token: Optional[str]) -> List[RepoInfo]:
@@ -30,7 +30,7 @@ def fetch_starred_repositories(username: str, token: Optional[str]) -> List[Repo
 
         data = response.json()
         if not data:
-            break  # No more data
+            break
 
         for item in data:
             repo_info = RepoInfo(

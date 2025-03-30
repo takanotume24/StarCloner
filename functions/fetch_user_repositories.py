@@ -1,7 +1,7 @@
 import requests
 import sys
 from typing import Dict, List, Optional
-from types.repo_info import RepoInfo
+from pytypes.repo_info import RepoInfo
 
 
 def fetch_user_repositories(

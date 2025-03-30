@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch, Mock
 from pathlib import Path
 from functions.clone_or_pull_repo import clone_or_pull_repo
-from types.repo_info import RepoInfo
+from pytypes.repo_info import RepoInfo
 
 
 class TestCloneOrPullRepo(unittest.TestCase):

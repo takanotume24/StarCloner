@@ -1,6 +1,6 @@
 import unittest
 from functions.filter_star_repositories import filter_star_repositories
-from types.repo_info import RepoInfo
+from pytypes.repo_info import RepoInfo
 
 
 class TestFilterStarRepositories(unittest.TestCase):
