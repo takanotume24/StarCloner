@@ -8,6 +8,8 @@ StarCloner clones (and on subsequent runs, pulls) all repositories starred by a 
 - **Filter by star counts**:
   - `--min-stars`: Only include repositories with a star count greater than or equal to this value.
   - `--max-stars`: Only include repositories with a star count less than or equal to this value.
+- **Filter by repository owner**:
+  - `--owner-filter`: Only include repositories whose owner name matches this string (case-insensitive).
 - **Dry-run mode** (`--dry-run`): Display which repositories would be processed without actually cloning/pulling them.
 - **Skip confirmation** (`--yes`): Automatically proceed without asking for user confirmation.
 - **Specify a parent directory** (`--output-dir` or `-o`): By default, StarCloner clones/pulls into a folder named after the GitHub username in your current working directory. Use `--output-dir` to specify a **different parent directory**, within which a subdirectory named after the GitHub username is created.
@@ -62,22 +64,26 @@ After setting the variable, run StarCloner as usual.
 
 ### Options
 
-- `USERNAME`  
+- **`USERNAME`**  
   The GitHub username whose starred repositories you want to clone/pull (e.g., `octocat`).
 
-- `--dry-run, -n`  
+- **`--dry-run, -n`**  
   Preview the repositories to be cloned or pulled without actually doing it.
 
-- `--yes, -y`  
+- **`--yes, -y`**  
   Skip the confirmation prompt and immediately proceed with the clone/pull operation.
 
-- `--min-stars MIN_STARS`  
+- **`--min-stars MIN_STARS`**  
   Only process repositories with **at least** this many stars.
 
-- `--max-stars MAX_STARS`  
+- **`--max-stars MAX_STARS`**  
   Only process repositories with **at most** this many stars.
 
-- `--output-dir, -o OUTPUT_DIR`  
+- **`--owner-filter OWNER_FILTER`**  
+  Only include repositories whose **owner name** matches this string (case-insensitive).  
+  For example, `--owner-filter torvalds` would only include repositories owned by `torvalds`.
+
+- **`--output-dir, -o OUTPUT_DIR`**  
   The **parent directory** in which to create or reuse a subdirectory named after `USERNAME`.  
   Defaults to `"."` (the current directory).  
   For example, if `--output-dir /path/to/parent` is used and `USERNAME` is `octocat`,  
@@ -105,14 +111,25 @@ After setting the variable, run StarCloner as usual.
    ```
    This will display which repositories would be cloned or pulled but will not actually clone or pull them.
 
-4. **Clone/pull with an environment variable `GITHUB_TOKEN`**:
+4. **Filter only repos owned by `torvalds` that `octocat` has starred**:
+   ```bash
+   python3 starcloner.py octocat --owner-filter torvalds
+   ```
+   This will only process repositories for which the owner is exactly `torvalds` (case-insensitive).
+
+5. **Combine multiple filters**: For example, only repos with at least 100 stars AND owned by `microsoft`:
+   ```bash
+   python3 starcloner.py octocat --min-stars 100 --owner-filter microsoft
+   ```
+
+6. **Clone/pull with an environment variable `GITHUB_TOKEN`**:
    ```bash
    export GITHUB_TOKEN="your_token_here"
    python3 starcloner.py octocat --max-stars 1000
    ```
    Here, only repositories with **at most** 1000 stars will be cloned or pulled. If they already exist locally, StarCloner will attempt a `git pull`.
 
-5. **Skip confirmation**:
+7. **Skip confirmation**:
    ```bash
    python3 starcloner.py octocat --yes
    ```
@@ -124,8 +141,8 @@ After setting the variable, run StarCloner as usual.
    - StarCloner accesses the GitHub API endpoint `https://api.github.com/users/<USERNAME>/starred`, retrieving all starred repositories (handling pagination as needed).
    - If the `GITHUB_TOKEN` environment variable is set, StarCloner uses that token in the Authorization header, which can help reduce the chances of hitting API rate limits and can allow access to private repositories if the token has the proper scope/permissions.
 
-2. **Filter by star count**  
-   - Any repository that does not meet the criteria set by `--min-stars` or `--max-stars` is excluded.
+2. **Filter by star count** (and optionally by owner)  
+   - Any repository that does not meet the criteria set by `--min-stars`/`--max-stars` or does not match `--owner-filter` is excluded.
 
 3. **Sort and display**  
    - Repositories are sorted alphabetically by their `full_name` (e.g., `owner/repo`) and displayed to the user.

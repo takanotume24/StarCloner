@@ -15,7 +15,7 @@ def parse_arguments() -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser(
         description="Clone (or pull if already exists) all repositories starred by a specified GitHub user, "
-                    "optionally filtered by star counts."
+                    "optionally filtered by star counts and owner name."
     )
     parser.add_argument(
         "username",
@@ -44,6 +44,11 @@ def parse_arguments() -> argparse.Namespace:
         type=int,
         default=None,
         help="Only include repositories with a stargazer count <= this value.",
+    )
+    parser.add_argument(
+        "--owner-filter",
+        default=None,
+        help="Only include repositories whose owner name matches this value (case-insensitive).",
     )
     parser.add_argument(
         "--output-dir",
@@ -101,20 +106,30 @@ def fetch_starred_repositories(
     return all_repos
 
 
-def filter_repositories_by_star_count(
-    repos: List[Dict[str, Any]], min_stars: Optional[int], max_stars: Optional[int]
+def filter_repositories(
+    repos: List[Dict[str, Any]],
+    min_stars: Optional[int],
+    max_stars: Optional[int],
+    owner_filter: Optional[str]
 ) -> List[Dict[str, Any]]:
     """
-    Filter the given list of repositories based on star count.
+    Filter the given list of repositories based on star count and owner name.
     """
     filtered = []
     for repo in repos:
         count = repo.get("stargazers_count", 0)
-
+        # star数フィルタ
         if min_stars is not None and count < min_stars:
             continue
         if max_stars is not None and count > max_stars:
             continue
+
+        # owner名フィルタ
+        if owner_filter is not None:
+            # repo["owner"]["login"] にはリポジトリのオーナーのユーザー名が入っている
+            owner_name = repo.get("owner", {}).get("login", "")
+            if owner_name.lower() != owner_filter.lower():
+                continue
 
         filtered.append(repo)
 
@@ -188,13 +203,16 @@ def main() -> None:
         )
         sys.exit(0)
 
-    # Filter repositories by star count
-    filtered_repos = filter_repositories_by_star_count(
-        starred_repos, args.min_stars, args.max_stars
+    # Filter repositories by star count and (optionally) owner name
+    filtered_repos = filter_repositories(
+        starred_repos,
+        min_stars=args.min_stars,
+        max_stars=args.max_stars,
+        owner_filter=args.owner_filter
     )
 
     if not filtered_repos:
-        print("No repositories match the specified star count criteria.")
+        print("No repositories match the specified criteria.")
         sys.exit(0)
 
     # Sort repos by their full_name in alphabetical order
@@ -205,7 +223,8 @@ def main() -> None:
     for repo in filtered_repos:
         name = repo.get("full_name", "unknown/unknown")
         stars = repo.get("stargazers_count", 0)
-        print(f"  {name} (Stars: {stars})")
+        owner_name = repo.get("owner", {}).get("login", "")
+        print(f"  {name} (Stars: {stars}, Owner: {owner_name})")
 
     # If not in 'yes' mode, prompt for confirmation
     if not args.yes:
