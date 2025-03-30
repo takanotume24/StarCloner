@@ -12,22 +12,23 @@ def fetch_repos_by_subcommand(
     """
     Fetch the repository list based on the subcommand (star, repo, or org).
     """
-    if args.command == "star":
-        return fetch_starred_repositories(args.username, token)
-    elif args.command == "repo":
-        return fetch_user_repositories(
-            username=args.username,
-            token=token,
-            include_forks=args.include_forks,
-            include_archived=args.include_archived,
-        )
-    elif args.command == "org":
-        return fetch_org_repositories(
-            orgname=args.orgname,
-            token=token,
-            include_forks=args.include_forks,
-            include_archived=args.include_archived,
-        )
-    else:
-        # This should never happen if subcommands are required
-        return []
+    match args.command:
+        case "star":
+            return fetch_starred_repositories(args.username, token)
+        case "repo":
+            return fetch_user_repositories(
+                username=args.username,
+                token=token,
+                include_forks=args.include_forks,
+                include_archived=args.include_archived,
+            )
+        case "org":
+            return fetch_org_repositories(
+                orgname=args.orgname,
+                token=token,
+                include_forks=args.include_forks,
+                include_archived=args.include_archived,
+            )
+        case _:
+            # This should never happen if subcommands are required
+            return []
