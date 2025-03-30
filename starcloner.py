@@ -19,13 +19,13 @@ def parse_arguments() -> argparse.Namespace:
     )
     parser.add_argument(
         "username",
-        help="The GitHub username whose starred repositories should be cloned/pulled.",
+        help="The GitHub username whose starred repositories will be processed.",
     )
     parser.add_argument(
         "--dry-run",
         "-n",
         action="store_true",
-        help="Dry-run: display which repositories would be processed without actually doing it.",
+        help="Dry-run: show which repositories would be processed without making changes.",
     )
     parser.add_argument(
         "--yes",
@@ -37,50 +37,50 @@ def parse_arguments() -> argparse.Namespace:
         "--min-stars",
         type=int,
         default=None,
-        help="Only include repositories with a stargazer count >= this value.",
+        help="Only include repositories with stargazer count >= this value.",
     )
     parser.add_argument(
         "--max-stars",
         type=int,
         default=None,
-        help="Only include repositories with a stargazer count <= this value.",
+        help="Only include repositories with stargazer count <= this value.",
     )
     parser.add_argument(
         "--owner-filter",
         default=None,
-        help="Only include repositories whose owner name matches this value (case-insensitive).",
+        help="Only include repositories whose owner's name matches this value (case-insensitive).",
     )
     parser.add_argument(
         "--output-dir",
         "-o",
         default=".",
-        help="Directory in which to clone the starred repositories. "
-             "Defaults to the current working directory ('.').",
+        help="Directory where the starred repositories will be cloned. Defaults to the current working directory.",
     )
     return parser.parse_args()
 
 
-def fetch_starred_repositories(
-    username: str, token: Optional[str]
-) -> List[Dict[str, Any]]:
+def fetch_starred_repositories(username: str, token: Optional[str]) -> List[Dict[str, Any]]:
     """
-    Retrieve data about all repositories starred by the given username,
-    handling pagination as needed.
-
-    Returns a list of dictionaries, each containing fields like:
-        {
-            "full_name":        "owner/repo",
-            "clone_url":        "https://github.com/owner/repo.git",
-            "stargazers_count": 123,
-            ...
-        }
+    Fetch all repositories starred by the given user.
+    Handles pagination as needed.
+    
+    Each repository is a dict containing keys like:
+      {
+         "full_name": "owner/repo",
+         "clone_url": "https://github.com/owner/repo.git",
+         "stargazers_count": 123,
+         ...
+      }
     """
     all_repos: List[Dict[str, Any]] = []
     page: int = 1
-    headers: Dict[str, str] = {}
+    headers: Dict[str, str] = {
+        "Accept": "application/vnd.github.v3+json"
+    }
 
     if token:
-        headers["Authorization"] = f"token {token}"
+        # Use Bearer token for authentication (latest recommended method)
+        headers["Authorization"] = f"Bearer {token}"
 
     while True:
         url = f"https://api.github.com/users/{username}/starred"
@@ -97,7 +97,7 @@ def fetch_starred_repositories(
 
         data = response.json()
         if not data:
-            # No more data; we've reached the end
+            # No more data; reached the end of pages.
             break
 
         all_repos.extend(data)
@@ -106,27 +106,22 @@ def fetch_starred_repositories(
     return all_repos
 
 
-def filter_repositories(
-    repos: List[Dict[str, Any]],
-    min_stars: Optional[int],
-    max_stars: Optional[int],
-    owner_filter: Optional[str]
-) -> List[Dict[str, Any]]:
+def filter_repositories(repos: List[Dict[str, Any]], min_stars: Optional[int], max_stars: Optional[int],
+                        owner_filter: Optional[str]) -> List[Dict[str, Any]]:
     """
-    Filter the given list of repositories based on star count and owner name.
+    Filter the list of repositories based on stargazer count and owner's name.
     """
     filtered = []
     for repo in repos:
         count = repo.get("stargazers_count", 0)
-        # star数フィルタ
+        # Filter by star count
         if min_stars is not None and count < min_stars:
             continue
         if max_stars is not None and count > max_stars:
             continue
 
-        # owner名フィルタ
+        # Filter by owner's name
         if owner_filter is not None:
-            # repo["owner"]["login"] にはリポジトリのオーナーのユーザー名が入っている
             owner_name = repo.get("owner", {}).get("login", "")
             if owner_name.lower() != owner_filter.lower():
                 continue
@@ -140,7 +135,7 @@ def confirm_action(repo_count: int, dry_run: bool) -> bool:
     """
     Ask for user confirmation before proceeding, unless in dry-run or auto-confirm mode.
     """
-    mode = "dry-run (no actual changes)" if dry_run else "actual clone/pull"
+    mode = "dry-run (no changes will be made)" if dry_run else "actual clone/pull"
     print(f"\nYou are about to process {repo_count} repository(ies) with {mode}.")
     choice = input("Proceed? [y/N]: ").strip().lower()
     return choice == "y"
@@ -148,26 +143,26 @@ def confirm_action(repo_count: int, dry_run: bool) -> bool:
 
 def clone_or_pull_repo(repo: Dict[str, Any], target_dir: Path, dry_run: bool) -> None:
     """
-    Clone or pull a single repository into target_dir:
-      - If the directory doesn't exist, clone.
+    Clone or pull a repository into target_dir:
+      - If the directory doesn't exist, perform clone.
       - If it exists, run 'git pull'.
     """
     clone_url = repo.get("clone_url")
     full_name = repo.get("full_name", clone_url)  # fallback if full_name is missing
 
-    # Use the last part of "owner/repo" as the folder name (e.g., "repo").
+    # Use the last part of "owner/repo" as the local folder name (e.g., "repo").
     local_repo_dir_name = full_name.split("/")[-1]
     local_path = target_dir / local_repo_dir_name
 
     if local_path.is_dir():
-        # Already cloned; do pull
+        # Repository already cloned; perform pull
         if dry_run:
-            print(f"Dry-run: Would pull in '{local_path}' (Repository: {full_name})")
+            print(f"Dry-run: Would perform pull in '{local_path}' (Repository: {full_name})")
         else:
             print(f"Pulling in '{local_path}' (Repository: {full_name})")
             subprocess.run(["git", "-C", str(local_path), "pull"], check=False)
     else:
-        # Need to clone
+        # Repository not cloned; perform clone
         if dry_run:
             print(f"Dry-run: Would clone {clone_url} into '{target_dir}' (Repository: {full_name})")
         else:
@@ -177,8 +172,7 @@ def clone_or_pull_repo(repo: Dict[str, Any], target_dir: Path, dry_run: bool) ->
 
 def process_repositories(repo_data: List[Dict[str, Any]], target_dir: Path, dry_run: bool) -> None:
     """
-    For each repository in repo_data:
-      - Check if local directory exists, then clone or pull accordingly.
+    Process each repository: if the local directory exists, pull updates; otherwise, clone it.
     """
     target_dir.mkdir(parents=True, exist_ok=True)
 
@@ -189,21 +183,25 @@ def process_repositories(repo_data: List[Dict[str, Any]], target_dir: Path, dry_
 def main() -> None:
     args = parse_arguments()
 
-    # Determine the final path: directly use --output-dir
+    # Determine the final path (use --output-dir directly)
     parent_dir = Path(args.output_dir).resolve()
     final_path = parent_dir
 
+    # Read token from environment variable
     token = os.environ.get("GITHUB_TOKEN", None)
 
-    # Fetch all starred repositories for the specified user
+    if token:
+        print("Authentication token loaded from environment variable.")
+    else:
+        print("No authentication token provided. Proceeding without authentication.")
+
+    # Fetch all repositories starred by the specified user
     starred_repos = fetch_starred_repositories(args.username, token)
     if not starred_repos:
-        print(
-            f"No starred repositories found for user '{args.username}', or an error occurred."
-        )
+        print(f"No starred repositories found for user '{args.username}' or an error occurred.")
         sys.exit(0)
 
-    # Filter repositories by star count and (optionally) owner name
+    # Filter repositories by stargazer count and owner's name (if specified)
     filtered_repos = filter_repositories(
         starred_repos,
         min_stars=args.min_stars,
@@ -215,7 +213,7 @@ def main() -> None:
         print("No repositories match the specified criteria.")
         sys.exit(0)
 
-    # Sort repos by their full_name in alphabetical order
+    # Sort repositories alphabetically by full_name
     filtered_repos.sort(key=lambda r: r.get("full_name", "").lower())
 
     # Display the filtered repositories
@@ -226,7 +224,7 @@ def main() -> None:
         owner_name = repo.get("owner", {}).get("login", "")
         print(f"  {name} (Stars: {stars}, Owner: {owner_name})")
 
-    # If not in 'yes' mode, prompt for confirmation
+    # If '--yes' is not specified, prompt for confirmation
     if not args.yes:
         if not confirm_action(len(filtered_repos), args.dry_run):
             print("Process canceled.")
@@ -234,7 +232,7 @@ def main() -> None:
     else:
         print("\n'--yes' specified; skipping confirmation prompt.\n")
 
-    # Clone or pull
+    # Clone or pull repositories
     process_repositories(filtered_repos, target_dir=final_path, dry_run=args.dry_run)
 
 
