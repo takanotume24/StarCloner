@@ -77,12 +77,15 @@ def fetch_starred_repositories(
         params = {"page": page, "per_page": 100}
         response = requests.get(url, headers=headers, params=params)
 
+        # --- エラー時にボディも表示するように変更 ---
         if response.status_code != 200:
             print(
                 f"Error: GitHub API request returned status code {response.status_code}.",
                 file=sys.stderr,
             )
+            print("Response body:", response.text, file=sys.stderr)
             break
+        # ------------------------------------------
 
         data = response.json()
         if not data:
