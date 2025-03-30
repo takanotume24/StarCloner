@@ -81,7 +81,22 @@ By default, repositories are cloned (or pulled) into the current directory. If n
    chmod +x starcloner.py
    ```
 
-## Usage
+## Running Tests
+
+To run the tests for StarCloner, you can use the `pytest` framework. Ensure you have `pytest` installed in your environment. If not, you can install it using pip:
+
+```bash
+pip install pytest
+```
+
+Once `pytest` is installed, you can run the tests by executing the following command in the root directory of the project:
+
+```bash
+pytest
+```
+
+This will automatically discover and run all the test files in the `tests` directory.
+
 
 StarCloner has three subcommands:
 
