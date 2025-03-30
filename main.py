@@ -24,10 +24,6 @@ def parse_arguments():
         help="Dry-run: display which repositories would be cloned without actually cloning."
     )
     parser.add_argument(
-        "--token",
-        help="GitHub Personal Access Token (optional). This can help avoid rate limits or allow access to private repos starred by the user."
-    )
-    parser.add_argument(
         "--min-stars",
         type=int,
         default=None,
@@ -54,6 +50,8 @@ def fetch_starred_repositories(username, token=None):
         "stargazers_count": 123,
         ...
     }
+
+    token: a personal access token string from the environment (optional).
     """
     all_repos = []
     page = 1
@@ -137,8 +135,11 @@ def clone_repositories(repo_data, target_dir, dry_run=False):
 def main():
     args = parse_arguments()
 
+    # Get the GitHub token from environment variable (optional)
+    token = os.environ.get("GITHUB_TOKEN", None)
+
     # Fetch all starred repositories for the specified user
-    starred = fetch_starred_repositories(args.username, args.token)
+    starred = fetch_starred_repositories(args.username, token=token)
     if not starred:
         print(f"No starred repositories found for user '{args.username}', or an error occurred.")
         sys.exit(0)
