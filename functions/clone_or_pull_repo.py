@@ -10,7 +10,8 @@ def clone_or_pull_repo(repo: RepoInfo, target_dir: Path, dry_run: bool) -> None:
       - If it exists, perform a 'git pull'.
     """
     local_repo_dir_name = repo.full_name.split("/")[-1]
-    local_path = target_dir / local_repo_dir_name
+    user_or_org_name = repo.full_name.split("/")[0]
+    local_path = target_dir / user_or_org_name / local_repo_dir_name
 
     if local_path.is_dir():
         if dry_run:
