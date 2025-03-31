@@ -4,11 +4,11 @@ from pathlib import Path
 from functions.parse_arguments import parse_arguments
 from functions.filter_repositories import filter_repositories
 from functions.print_repositories import print_repositories
-from functions.confirm_action import confirm_action
+from functions.confirm_action_message import confirm_action_message
 from functions.process_repositories import process_repositories
 from functions.move_temp_files import move_temp_files
-
 from functions.list_cloned_repositories import list_cloned_repositories
+from functions.fetch_repos_by_subcommand import fetch_repos_by_subcommand
 
 
 def main() -> None:
@@ -21,7 +21,7 @@ def main() -> None:
     else:
         print("No authentication token found. Proceeding without authentication.")
 
-    all_repos = None
+    all_repos = fetch_repos_by_subcommand(args, token)
 
     if args.command == "list-cloned":
         list_cloned_repositories(Path(args.output_dir).resolve())
@@ -47,7 +47,7 @@ def main() -> None:
 
     # 4) Confirm action unless --yes is specified
     if not args.yes:
-        if not confirm_action(len(filtered_repos), args.dry_run):
+        if not confirm_action_message(len(filtered_repos), args.dry_run):
             print("Process canceled.")
             sys.exit(0)
     else:
