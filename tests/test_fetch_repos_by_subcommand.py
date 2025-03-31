@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from functions.fetch_repos_by_subcommand import fetch_repos_by_subcommand
 from argparse import Namespace
 from pytypes.repo_info import RepoInfo
