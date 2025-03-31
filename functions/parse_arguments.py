@@ -128,7 +128,23 @@ def parse_arguments() -> argparse.Namespace:
         help="Directory where the repositories will be cloned. Defaults to current dir.",
     )
 
-    # --- subcommand: list-cloned ---
+    # --- subcommand: maintenance ---
+    maintenance_parser = subparsers.add_parser(
+        "maintenance", help="Perform maintenance tasks."
+    )
+    maintenance_subparsers = maintenance_parser.add_subparsers(dest="maintenance_command", required=True)
+
+    # Subcommand reflecting file moving
+    move_temp_files_parser = maintenance_subparsers.add_parser(
+        "move-temp-files", help="Move temporary files to a designated directory."
+    )
+    move_temp_files_parser.add_argument(
+        "--dry-run",
+        "-n",
+        action="store_true",
+        help="Dry-run: show what files would be moved without making changes.",
+    )
+
     list_cloned_parser = subparsers.add_parser(
         "list-cloned", help="List all cloned repositories in the specified directory."
     )
