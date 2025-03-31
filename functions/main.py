@@ -8,6 +8,7 @@ from functions.print_repositories import print_repositories
 from functions.confirm_action import confirm_action
 from functions.process_repositories import process_repositories
 from pytypes.repo_info import RepoInfo
+from functions.list_cloned_repositories import list_cloned_repositories
 
 
 def main() -> None:
@@ -50,22 +51,3 @@ def main() -> None:
     process_repositories(
         filtered_repos, target_dir=Path(args.output_dir).resolve(), dry_run=args.dry_run
     )
-
-
-def list_cloned_repositories(target_dir: Path) -> None:
-    """
-    List all cloned repositories in the target directory.
-    """
-    cloned_repos = []
-    for user_dir in target_dir.iterdir():
-        if user_dir.is_dir():
-            for repo_dir in user_dir.iterdir():
-                if repo_dir.is_dir():
-                    repo_info = RepoInfo(
-                        full_name=f"{user_dir.name}/{repo_dir.name}",
-                        clone_url="",  # Not needed for listing
-                        stargazers_count=0,  # Not needed for listing
-                        owner_name=user_dir.name
-                    )
-                    cloned_repos.append(repo_info)
-    print_repositories(cloned_repos)

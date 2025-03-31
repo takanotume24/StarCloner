@@ -32,5 +32,5 @@ def clone_or_pull_repo(repo: RepoInfo, target_dir: Path, dry_run: bool) -> None:
                 f"Cloning {repo.clone_url} into '{target_dir}' (Repository: {repo.full_name})"
             )
             subprocess.run(
-                ["git", "clone", repo.clone_url], cwd=str(target_dir), check=False
+                ["git", "clone", repo.clone_url], cwd=str(local_path.parent), check=False
             )
