@@ -69,6 +69,3 @@ def list_cloned_repositories(target_dir: Path) -> None:
                     )
                     cloned_repos.append(repo_info)
     print_repositories(cloned_repos)
-
-
-    main()
