@@ -6,6 +6,7 @@ from functions.filter_repositories import filter_repositories
 from functions.print_repositories import print_repositories
 from functions.confirm_action_message import confirm_action_message
 from functions.process_repositories import process_repositories
+from functions.get_user_confirmation import get_user_confirmation
 from functions.move_temp_files import move_temp_files
 from functions.list_cloned_repositories import list_cloned_repositories
 from functions.fetch_repos_by_subcommand import fetch_repos_by_subcommand
@@ -47,7 +48,8 @@ def main() -> None:
 
     # 4) Confirm action unless --yes is specified
     if not args.yes:
-        if not confirm_action_message(len(filtered_repos), args.dry_run):
+        print(confirm_action_message(len(filtered_repos), args.dry_run))
+        if not get_user_confirmation():
             print("Process canceled.")
             sys.exit(0)
     else:
