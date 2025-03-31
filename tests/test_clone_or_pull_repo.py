@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch, Mock
+from unittest.mock import patch
 from pathlib import Path
 from functions.clone_or_pull_repo import clone_or_pull_repo
 from pytypes.repo_info import RepoInfo

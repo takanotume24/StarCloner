@@ -2,13 +2,11 @@ import os
 import sys
 from pathlib import Path
 from functions.parse_arguments import parse_arguments
-from functions.fetch_repos_by_subcommand import fetch_repos_by_subcommand
 from functions.filter_repositories import filter_repositories
 from functions.print_repositories import print_repositories
 from functions.confirm_action import confirm_action
 from functions.process_repositories import process_repositories
-from maintenance import move_temp_files
-from pytypes.repo_info import RepoInfo
+from functions.move_temp_files import move_temp_files
 
 from functions.list_cloned_repositories import list_cloned_repositories
 

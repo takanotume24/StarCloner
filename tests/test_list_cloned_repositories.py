@@ -24,6 +24,8 @@ def test_list_cloned_repositories(capsys):
         )
 
         # Run the function
-        with patch("functions.list_cloned_repositories.print_repositories") as mock_print:
+        with patch(
+            "functions.list_cloned_repositories.print_repositories"
+        ) as mock_print:
             list_cloned_repositories(temp_path)
             mock_print.assert_called_once_with([expected_repo_info])
