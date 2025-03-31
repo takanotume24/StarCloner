@@ -7,6 +7,7 @@ from functions.filter_repositories import filter_repositories
 from functions.print_repositories import print_repositories
 from functions.confirm_action import confirm_action
 from functions.process_repositories import process_repositories
+from pytypes.repo_info import RepoInfo
 
 
 def main() -> None:
@@ -19,7 +20,10 @@ def main() -> None:
     else:
         print("No authentication token found. Proceeding without authentication.")
 
-    # 1) Fetch repositories based on subcommand
+    if args.list_cloned:
+        list_cloned_repositories(Path(args.output_dir).resolve())
+        sys.exit(0)
+
     all_repos = fetch_repos_by_subcommand(args, token)
     if not all_repos:
         print("No repositories found or an error occurred.")
@@ -48,5 +52,23 @@ def main() -> None:
     )
 
 
-if __name__ == "__main__":
+def list_cloned_repositories(target_dir: Path) -> None:
+    """
+    List all cloned repositories in the target directory.
+    """
+    cloned_repos = []
+    for user_dir in target_dir.iterdir():
+        if user_dir.is_dir():
+            for repo_dir in user_dir.iterdir():
+                if repo_dir.is_dir():
+                    repo_info = RepoInfo(
+                        full_name=f"{user_dir.name}/{repo_dir.name}",
+                        clone_url="",  # Not needed for listing
+                        stargazers_count=0,  # Not needed for listing
+                        owner_name=user_dir.name
+                    )
+                    cloned_repos.append(repo_info)
+    print_repositories(cloned_repos)
+
+
     main()

@@ -128,4 +128,15 @@ def parse_arguments() -> argparse.Namespace:
         help="Directory where the repositories will be cloned. Defaults to current dir.",
     )
 
+    # --- subcommand: list-cloned ---
+    list_cloned_parser = subparsers.add_parser(
+        "list-cloned", help="List all cloned repositories in the specified directory."
+    )
+    list_cloned_parser.add_argument(
+        "--output-dir",
+        "-o",
+        default=".",
+        help="Directory where the repositories are cloned. Defaults to current dir.",
+    )
+
     return parser.parse_args()
