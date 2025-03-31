@@ -8,7 +8,29 @@ from pytypes.repo_info import RepoInfo
 class TestCloneOrPullRepo(unittest.TestCase):
     @patch("functions.clone_or_pull_repo.subprocess.run")
     @patch("functions.clone_or_pull_repo.Path.is_dir")
-    def test_clone_or_pull_repo_clone(self, mock_is_dir, mock_run):
+    @patch("functions.clone_or_pull_repo.Path.mkdir")
+    def test_clone_or_pull_repo_clone(self, mock_mkdir, mock_is_dir, mock_run, tmpdir):
+        mock_is_dir.return_value = False
+        repo = RepoInfo(
+            full_name="octocat/repo1",
+            clone_url="https://github.com/octocat/repo1.git",
+            stargazers_count=50,
+            owner_name="octocat",
+        )
+        target_dir = Path(tmpdir)
+        user_or_org_name = repo.full_name.split("/")[0]
+        clone_or_pull_repo(repo, target_dir, dry_run=False)
+        expected_path = target_dir / user_or_org_name / "repo1"
+        # Verify that the directory was actually created
+        assert expected_path.parent.exists()
+        mock_run.assert_called_with(
+            ["git", "clone", repo.clone_url], cwd=str(expected_path.parent), check=False
+        )
+
+    @patch("functions.clone_or_pull_repo.subprocess.run")
+    @patch("functions.clone_or_pull_repo.Path.is_dir")
+    @patch("functions.clone_or_pull_repo.Path.mkdir")
+    def test_clone_or_pull_repo_clone(self, mock_mkdir, mock_is_dir, mock_run):
         mock_is_dir.return_value = False
         repo = RepoInfo(
             full_name="octocat/repo1",
@@ -20,6 +42,7 @@ class TestCloneOrPullRepo(unittest.TestCase):
         user_or_org_name = repo.full_name.split("/")[0]
         clone_or_pull_repo(repo, target_dir, dry_run=False)
         expected_path = target_dir / user_or_org_name / "repo1"
+        mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
         mock_run.assert_called_with(
             ["git", "clone", repo.clone_url], cwd=str(expected_path.parent), check=False
         )
