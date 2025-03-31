@@ -17,9 +17,11 @@ class TestCloneOrPullRepo(unittest.TestCase):
             owner_name="octocat",
         )
         target_dir = Path("/fake/dir")
+        user_or_org_name = repo.full_name.split("/")[0]
         clone_or_pull_repo(repo, target_dir, dry_run=False)
+        expected_path = target_dir / user_or_org_name / "repo1"
         mock_run.assert_called_with(
-            ["git", "clone", repo.clone_url], cwd=str(target_dir), check=False
+            ["git", "clone", repo.clone_url], cwd=str(expected_path.parent), check=False
         )
 
     @patch("functions.clone_or_pull_repo.subprocess.run")
@@ -33,9 +35,11 @@ class TestCloneOrPullRepo(unittest.TestCase):
             owner_name="octocat",
         )
         target_dir = Path("/fake/dir")
+        user_or_org_name = repo.full_name.split("/")[0]
         clone_or_pull_repo(repo, target_dir, dry_run=False)
+        expected_path = target_dir / user_or_org_name / "repo1"
         mock_run.assert_called_with(
-            ["git", "-C", str(target_dir / "repo1"), "pull"], check=False
+            ["git", "-C", str(expected_path), "pull"], check=False
         )
 
 
