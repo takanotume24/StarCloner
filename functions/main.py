@@ -20,7 +20,7 @@ def main() -> None:
     else:
         print("No authentication token found. Proceeding without authentication.")
 
-    if args.list_cloned:
+    if args.command == "list-cloned":
         list_cloned_repositories(Path(args.output_dir).resolve())
         sys.exit(0)
 
