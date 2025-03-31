@@ -12,6 +12,6 @@ def print_repositories(repos: List[RepoInfo]) -> None:
     )
     for repo in repos_sorted:
         print(
-            f"  {repo.full_name} (Stars: {repo.stargazers_count}, "
+            f"  {repo.full_name} ("
             f"Owner: {repo.owner_name})"
         )
