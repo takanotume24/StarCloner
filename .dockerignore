@@ -1,0 +1,10 @@
+# Exclude unnecessary files from the Docker image
+.git
+.gitignore
+*.pyc
+__pycache__
+*.egg-info
+build/
+dist/
+tests/
+docs/
